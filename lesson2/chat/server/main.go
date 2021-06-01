@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 )
 
 type client chan<- string
@@ -52,12 +53,33 @@ func handleConn(conn net.Conn) {
 	ch := make(chan string)
 	go clientWriter(conn, ch)
 	who := conn.RemoteAddr().String()
-	ch <- "You are " + who
-	messages <- who + " has arrived"
-	entering <- ch
+
 	input := bufio.NewScanner(conn)
 	for input.Scan() {
-		messages <- who + ": " + input.Text()
+		msg := input.Text()
+		log.Printf("Recieved auth string: %s", msg)
+		if strings.HasPrefix(msg, "Set nickname: ") {
+			log.Printf("Recieved auth string: %s", msg)
+			nickname := string(msg[14:])
+			log.Printf("Nickname: %s", nickname)
+			who = nickname + " (" + who + ")"
+			ch <- "You are " + who
+		} else {
+			who = "Unknown" + " (" + who + ")"
+			ch <- "You are " + who
+			messages <- who + ": " + msg
+		}
+		break
+	}
+
+	messages <- who + " has arrived"
+	entering <- ch
+	input = bufio.NewScanner(conn)
+	for input.Scan() {
+		msg := input.Text()
+		messages <- who + ": " + msg
+		log.Printf("Recieved: %s", msg)
+
 	}
 	leaving <- ch
 	messages <- who + " has left"

@@ -20,7 +20,10 @@ func main() {
 		if err == io.EOF {
 			break
 		}
-		io.WriteString(os.Stdout, fmt.Sprintf("Custom output! %s", string(buf)))
 		// выводим измененное сообщение сервера в консоль
+		io.WriteString(os.Stdout, fmt.Sprintf("Custom output! %s", string(buf)))
+
+		//clean buffer
+		buf = make([]byte, 256)
 	}
 }
