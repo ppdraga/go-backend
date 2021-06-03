@@ -15,7 +15,7 @@ type UploadHandler struct {
 
 func main() {
 	uploadHandler := &UploadHandler{
-		HostAddr:  "localhost:8081",
+		HostAddr:  "http://localhost:8081",
 		UploadDir: "upload",
 	}
 	http.Handle("/upload", uploadHandler)
@@ -66,6 +66,7 @@ func (h *UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//fileLink := "http://" + h.HostAddr + "/" + header.Filename
 	fileLink := h.HostAddr + "/" + header.Filename
 	//fmt.Fprintf(w, "File %s has been successfully uploaded", header.Filename)
 
