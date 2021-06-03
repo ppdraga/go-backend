@@ -16,9 +16,6 @@ import (
 
 func TestUploadHandler(t *testing.T) {
 
-	// Тест из методички падает с ошибкой:
-	// panic: runtime error: invalid memory address or nil pointer dereference
-
 	file, err := os.Open("testfile.txt")
 	if err != nil {
 		log.Println(err)
