@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -133,7 +134,7 @@ func (b *BrowseHandles) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				panic(err)
 			}
-			path = currentDir + "/" + path
+			path = filepath.Join(currentDir, path)
 		}
 
 		files, err := ioutil.ReadDir(path)
@@ -153,6 +154,18 @@ func (b *BrowseHandles) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				Size:      file.Size(),
 			}
 			res = append(res, fileInfo)
+		}
+
+		// Filtering
+		ext := r.URL.Query()["ext"]
+		if ext != nil && ext[0] != "" {
+			filtered := []FileInfo{}
+			for _, fileInfo := range res {
+				if fileInfo.Extension == ext[0] {
+					filtered = append(filtered, fileInfo)
+				}
+			}
+			res = filtered
 		}
 
 		json.NewEncoder(w).Encode(res)
