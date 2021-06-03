@@ -18,7 +18,7 @@ type UploadHandler struct {
 	UploadDir string
 }
 
-type BrowseHandles struct {
+type BrowseHandler struct {
 	BrowseDir string
 }
 
@@ -41,7 +41,7 @@ func main() {
 	}
 	http.Handle("/upload", uploadHandler)
 
-	browseHandler := &BrowseHandles{
+	browseHandler := &BrowseHandler{
 		BrowseDir: "upload",
 	}
 	http.Handle("/", browseHandler)
@@ -125,7 +125,7 @@ func (h *UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (b *BrowseHandles) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (b *BrowseHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodGet {
 		path := b.BrowseDir
