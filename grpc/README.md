@@ -10,3 +10,8 @@
 3. Update your PATH so that the protoc compiler can find the plugins:
    export PATH="$PATH:$(go env GOPATH)/bin"
 
+4. Compile module:
+   protoc --go_out=. --go-grpc_out=. addressbook.proto
+
+
+link: https://github.com/tensor-programming/grpc_tutorial
