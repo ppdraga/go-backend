@@ -7,9 +7,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/covrom/hex_arch_example/best_practice/internal/app/repos/user"
-
 	"github.com/google/uuid"
+	"usernet/internal/app/repos/user"
 )
 
 type Router struct {

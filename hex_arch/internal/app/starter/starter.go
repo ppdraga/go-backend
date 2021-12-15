@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/covrom/hex_arch_example/best_practice/internal/app/repos/user"
+	"usernet/internal/app/repos/user"
 )
 
 type App struct {

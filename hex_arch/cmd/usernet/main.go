@@ -6,11 +6,11 @@ import (
 	"os/signal"
 	"sync"
 
-	"github.com/ppdraga/go-backend/hex_arch/internal/api/handler"
-	"github.com/ppdraga/go-backend/hex_arch/internal/api/server"
-	"github.com/ppdraga/go-backend/hex_arch/internal/app/repos/user"
-	"github.com/ppdraga/go-backend/hex_arch/internal/app/starter"
-	"github.com/ppdraga/go-backend/hex_arch/internal/db/mem/usermemstore"
+	"usernet/internal/api/handler"
+	"usernet/internal/api/server"
+	"usernet/internal/app/repos/user"
+	"usernet/internal/app/starter"
+	"usernet/internal/db/mem/usermemstore"
 )
 
 func main() {

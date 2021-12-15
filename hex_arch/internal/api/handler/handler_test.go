@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/covrom/hex_arch_example/best_practice/internal/app/repos/user"
-	"github.com/covrom/hex_arch_example/best_practice/internal/db/mem/usermemstore"
+	"usernet/internal/app/repos/user"
+	"usernet/internal/db/mem/usermemstore"
 )
 
 func TestRouter_CreateUser(t *testing.T) {

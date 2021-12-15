@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/ppdraga/go-backend/hex_arch/internal/app/repos/user"
+	"usernet/internal/app/repos/user"
 )
 
 var _ user.UserStore = &Users{}

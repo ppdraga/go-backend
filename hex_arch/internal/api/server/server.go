@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/covrom/hex_arch_example/best_practice/internal/app/repos/user"
-	"github.com/covrom/hex_arch_example/best_practice/internal/app/starter"
+	"usernet/internal/app/repos/user"
+	"usernet/internal/app/starter"
 )
 
 var _ starter.APIServer = &Server{}
