@@ -12,6 +12,7 @@ type User struct {
 	Name        string
 	Data        string
 	Permissions int
+	Aroundments []int
 }
 
 // нужен только тут
@@ -19,7 +20,7 @@ type UserStore interface {
 	Create(ctx context.Context, u User) (*uuid.UUID, error)
 	Read(ctx context.Context, uid uuid.UUID) (*User, error)
 	Delete(ctx context.Context, uid uuid.UUID) error
-	SearchUsers(ctx context.Context, s string) (chan User, error)
+	SearchUsers(ctx context.Context, s string) ([]User, error)
 }
 
 type Users struct {
@@ -50,36 +51,15 @@ func (us *Users) Read(ctx context.Context, uid uuid.UUID) (*User, error) {
 	return u, nil
 }
 
-func (us *Users) Delete(ctx context.Context, uid uuid.UUID) (*User, error) {
+func (us *Users) Delete(ctx context.Context, uid uuid.UUID) error {
 	u, err := us.ustore.Read(ctx, uid)
 	if err != nil {
-		return nil, fmt.Errorf("search user error: %w", err)
+		return fmt.Errorf("search user error: %w", err)
 	}
-	return u, us.ustore.Delete(ctx, uid)
+	return us.ustore.Delete(ctx, u.ID)
 }
 
-func (us *Users) SearchUsers(ctx context.Context, s string) (chan User, error) {
-	// FIXME: здесь нужно использвоать паттерн Unit of Work
-	// бизнес-транзакция
-	chin, err := us.ustore.SearchUsers(ctx, s)
-	if err != nil {
-		return nil, err
-	}
-	chout := make(chan User, 100)
-	go func() {
-		defer close(chout)
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case u, ok := <-chin:
-				if !ok {
-					return
-				}
-				u.Permissions = 0755
-				chout <- u
-			}
-		}
-	}()
-	return chout, nil
+func (us *Users) SearchUsers(ctx context.Context, s string) ([]User, error) {
+
+	return nil, nil
 }

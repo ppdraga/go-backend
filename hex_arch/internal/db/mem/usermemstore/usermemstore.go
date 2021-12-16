@@ -3,9 +3,7 @@ package usermemstore
 import (
 	"context"
 	"database/sql"
-	"strings"
 	"sync"
-	"time"
 
 	"github.com/google/uuid"
 	"usernet/internal/app/repos/user"
@@ -69,7 +67,7 @@ func (us *Users) Delete(ctx context.Context, uid uuid.UUID) error {
 	return nil
 }
 
-func (us *Users) SearchUsers(ctx context.Context, s string) (chan user.User, error) {
+func (us *Users) SearchUsers(ctx context.Context, s string) ([]user.User, error) {
 	us.Lock()
 	defer us.Unlock()
 
@@ -79,26 +77,5 @@ func (us *Users) SearchUsers(ctx context.Context, s string) (chan user.User, err
 	default:
 	}
 
-	// FIXME: переделать на дерево остатков
-
-	chout := make(chan user.User, 100)
-
-	go func() {
-		defer close(chout)
-		us.Lock()
-		defer us.Unlock()
-		for _, u := range us.m {
-			if strings.Contains(u.Name, s) {
-				select {
-				case <-ctx.Done():
-					return
-				case <-time.After(2 * time.Second):
-					return
-				case chout <- u:
-				}
-			}
-		}
-	}()
-
-	return chout, nil
+	return nil, nil
 }

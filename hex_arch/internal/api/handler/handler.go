@@ -22,15 +22,13 @@ func NewRouter(us *user.Users) *Router {
 		us:       us,
 	}
 	r.Handle("/create",
-		// r.AuthMiddleware(
 		r.AuthMiddleware(
 			http.HandlerFunc(r.CreateUser),
 		),
-		// ),
 	)
-	r.Handle("/read", r.AuthMiddleware(http.HandlerFunc(r.ReadUser)))
-	r.Handle("/delete", r.AuthMiddleware(http.HandlerFunc(r.DeleteUser)))
-	r.Handle("/search", r.AuthMiddleware(http.HandlerFunc(r.SearchUser)))
+	r.Handle("/user/read", r.AuthMiddleware(http.HandlerFunc(r.ReadUser)))
+	r.Handle("/user/delete", r.AuthMiddleware(http.HandlerFunc(r.DeleteUser)))
+	r.Handle("/user/search", r.AuthMiddleware(http.HandlerFunc(r.SearchUser)))
 	return r
 }
 
@@ -154,7 +152,7 @@ func (rt *Router) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	nbu, err := rt.us.Delete(r.Context(), uid)
+	err = rt.us.Delete(r.Context(), uid)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			http.Error(w, "not found", http.StatusNotFound)
@@ -164,14 +162,7 @@ func (rt *Router) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = json.NewEncoder(w).Encode(
-		User{
-			ID:         nbu.ID,
-			Name:       nbu.Name,
-			Data:       nbu.Data,
-			Permission: nbu.Permissions,
-		},
-	)
+	fmt.Fprintf(w, "ok")
 }
 
 // /search?q=...
