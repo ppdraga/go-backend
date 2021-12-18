@@ -3,7 +3,6 @@ package user
 import (
 	"context"
 	"fmt"
-
 	"github.com/google/uuid"
 )
 
@@ -12,15 +11,19 @@ type User struct {
 	Name        string
 	Data        string
 	Permissions int
-	Aroundments []int
+	Aroundments []uuid.UUID
 }
 
-// нужен только тут
 type UserStore interface {
 	Create(ctx context.Context, u User) (*uuid.UUID, error)
 	Read(ctx context.Context, uid uuid.UUID) (*User, error)
 	Delete(ctx context.Context, uid uuid.UUID) error
-	SearchUsers(ctx context.Context, s string) ([]User, error)
+	SearchUsers(ctx context.Context, s string) ([]*User, error)
+
+	AddUserToAroundment(ctx context.Context, uid, aid uuid.UUID) error
+	DeleteUserFromAroundment(ctx context.Context, uid, aid uuid.UUID) error
+	ListUsersInAroundment(ctx context.Context, aid uuid.UUID) ([]*User, error)
+	SearchAroundmentsByUserMembership(ctx context.Context, uid uuid.UUID) ([]uuid.UUID, error)
 }
 
 type Users struct {
@@ -59,7 +62,30 @@ func (us *Users) Delete(ctx context.Context, uid uuid.UUID) error {
 	return us.ustore.Delete(ctx, u.ID)
 }
 
-func (us *Users) SearchUsers(ctx context.Context, s string) ([]User, error) {
+func (us *Users) SearchUsers(ctx context.Context, s string) ([]*User, error) {
+	return us.ustore.SearchUsers(ctx, s)
+}
 
-	return nil, nil
+func (us *Users) AddUserToAroundment(ctx context.Context, uid, aid uuid.UUID) error {
+	return us.ustore.AddUserToAroundment(ctx, uid, aid)
+}
+
+func (us *Users) DeleteUserFromAroundment(ctx context.Context, uid, aid uuid.UUID) error {
+	return us.ustore.DeleteUserFromAroundment(ctx, uid, aid)
+}
+
+func (us *Users) ListUsersInAroundment(ctx context.Context, aid uuid.UUID) ([]uuid.UUID, error) {
+	users, err := us.ustore.ListUsersInAroundment(ctx, aid)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]uuid.UUID, len(users))
+	for _, u := range users {
+		ret = append(ret, u.ID)
+	}
+	return ret, nil
+}
+
+func (us *Users) SearchAroundmentsByUserMembership(ctx context.Context, uid uuid.UUID) ([]uuid.UUID, error) {
+	return us.ustore.SearchAroundmentsByUserMembership(ctx, uid)
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"time"
+	"usernet/internal/app/repos/aroundment"
 
 	"usernet/internal/app/repos/user"
 	"usernet/internal/app/starter"
@@ -14,6 +15,7 @@ var _ starter.APIServer = &Server{}
 type Server struct {
 	srv http.Server
 	us  *user.Users
+	as  *aroundment.Aroundments
 }
 
 func NewServer(addr string, h http.Handler) *Server {
@@ -35,7 +37,8 @@ func (s *Server) Stop() {
 	cancel()
 }
 
-func (s *Server) Start(us *user.Users) {
+func (s *Server) Start(us *user.Users, as *aroundment.Aroundments) {
 	s.us = us
+	s.as = as
 	go s.srv.ListenAndServe()
 }

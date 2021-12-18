@@ -26,6 +26,7 @@ type AroundmentStore interface {
 	Create(ctx context.Context, a Aroundment) (*uuid.UUID, error)
 	Read(ctx context.Context, aid uuid.UUID) (*Aroundment, error)
 	Delete(ctx context.Context, aid uuid.UUID) error
+	SearchAroundments(ctx context.Context, s string) ([]*Aroundment, error)
 }
 
 type Aroundments struct {
@@ -62,4 +63,9 @@ func (as *Aroundments) Delete(ctx context.Context, aid uuid.UUID) error {
 		return fmt.Errorf("search aroundment error: %w", err)
 	}
 	return as.astore.Delete(ctx, a.ID)
+}
+
+func (as *Aroundments) SearchAroundments(ctx context.Context, s string) ([]*Aroundment, error) {
+
+	return as.astore.SearchAroundments(ctx, s)
 }

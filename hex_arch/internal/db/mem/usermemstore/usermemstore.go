@@ -3,9 +3,9 @@ package usermemstore
 import (
 	"context"
 	"database/sql"
-	"sync"
-
 	"github.com/google/uuid"
+	"strings"
+	"sync"
 	"usernet/internal/app/repos/user"
 )
 
@@ -67,7 +67,7 @@ func (us *Users) Delete(ctx context.Context, uid uuid.UUID) error {
 	return nil
 }
 
-func (us *Users) SearchUsers(ctx context.Context, s string) ([]user.User, error) {
+func (us *Users) SearchUsers(ctx context.Context, s string) ([]*user.User, error) {
 	us.Lock()
 	defer us.Unlock()
 
@@ -77,5 +77,66 @@ func (us *Users) SearchUsers(ctx context.Context, s string) ([]user.User, error)
 	default:
 	}
 
+	ret := make([]*user.User, 0)
+
+	for _, u := range us.m {
+		if strings.Contains(u.Name, s) {
+			ret = append(ret, &u)
+		}
+	}
+
+	return ret, nil
+}
+
+func (us *Users) AddUserToAroundment(ctx context.Context, uid, aid uuid.UUID) error {
+	us.Lock()
+	defer us.Unlock()
+
+	select {
+	case <-ctx.Done():
+		return nil
+	default:
+	}
+
+	u, ok := us.m[uid]
+	if ok {
+		u.Aroundments = append(u.Aroundments, aid)
+		return nil
+	}
+	return sql.ErrNoRows
+
+}
+
+func (us *Users) DeleteUserFromAroundment(ctx context.Context, uid, aid uuid.UUID) error {
+	us.Lock()
+	defer us.Unlock()
+
+	select {
+	case <-ctx.Done():
+		return nil
+	default:
+	}
+	u, ok := us.m[uid]
+	if ok {
+		var new []uuid.UUID
+		for _, id := range u.Aroundments {
+			if id != aid {
+				new = append(new, id)
+			}
+		}
+		u.Aroundments = new
+		return nil
+	}
+	return sql.ErrNoRows
+
+}
+
+func (us *Users) ListUsersInAroundment(ctx context.Context, aid uuid.UUID) ([]*user.User, error) {
+	//    todo implement
+	return nil, nil
+}
+
+func (us *Users) SearchAroundmentsByUserMembership(ctx context.Context, uid uuid.UUID) ([]uuid.UUID, error) {
+	//    todo implement
 	return nil, nil
 }
