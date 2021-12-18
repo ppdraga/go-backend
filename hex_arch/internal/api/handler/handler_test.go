@@ -5,19 +5,26 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"usernet/internal/app/repos/aroundment"
+	"usernet/internal/db/mem/aroundmentmemstore"
 
 	"usernet/internal/app/repos/user"
 	"usernet/internal/db/mem/usermemstore"
 )
 
 func TestRouter_CreateUser(t *testing.T) {
+
 	ust := usermemstore.NewUsers()
+	ast := aroundmentmemstore.NewAroundments()
+
 	us := user.NewUsers(ust)
-	rt := NewRouter(us)
+	as := aroundment.NewAroundments(ast)
+
+	rt := NewRouter(us, as)
 
 	hts := httptest.NewServer(rt)
 
-	r, _ := http.NewRequest("POST", hts.URL+"/create", strings.NewReader(`{"name":"user123"}`))
+	r, _ := http.NewRequest("POST", hts.URL+"/user/create", strings.NewReader(`{"name":"user123"}`))
 	r.SetBasicAuth("admin", "admin")
 
 	cli := hts.Client()
@@ -36,13 +43,17 @@ func TestRouter_CreateUser(t *testing.T) {
 
 func TestRouter_CreateUser2(t *testing.T) {
 	ust := usermemstore.NewUsers()
+	ast := aroundmentmemstore.NewAroundments()
+
 	us := user.NewUsers(ust)
-	rt := NewRouter(us)
+	as := aroundment.NewAroundments(ast)
+
+	rt := NewRouter(us, as)
 
 	h := rt.AuthMiddleware(http.HandlerFunc(rt.CreateUser)).ServeHTTP
 
 	w := &httptest.ResponseRecorder{}
-	r := httptest.NewRequest("POST", "/create", strings.NewReader(`{"name":"user123"}`))
+	r := httptest.NewRequest("POST", "/user/create", strings.NewReader(`{"name":"user123"}`))
 	r.SetBasicAuth("admin", "admin")
 
 	h(w, r)
