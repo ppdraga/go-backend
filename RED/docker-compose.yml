@@ -1,0 +1,50 @@
+version: "3.7"
+services:
+
+  acl:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    command: "/bin/acl"
+    ports:
+      - 8001:80
+      - 9091:9091
+
+  router:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    command: "/bin/router"
+    ports:
+      - 8002:80
+      - 9095:9090
+
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: qwerty
+      MYSQL_DATABASE: test
+    volumes:
+      - ./volumes/data:/var/lib/mysql
+    ports:
+      - 8010:3306
+
+  grafana:
+    image: grafana/grafana:6.4.4
+    environment:
+      - "GF_SECURITY_ADMIN_USER=admin"
+      - "GF_SECURITY_ADMIN_PASSWORD=password"
+    ports:
+      - 3000:3000
+
+  node-exporter:
+    image: prom/node-exporter:v1.0.1
+    ports:
+      - 9100:9100
+
+  prometheus:
+    image: prom/prometheus:v2.22.0
+    volumes:
+      - "./prometheus.yml:/etc/prometheus/prometheus.yml:ro"
+    ports:
+      - 9099:9090
