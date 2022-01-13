@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: k8s-go-app-srv
+spec:
+  selector:
+    app: k8s-go-app
+#  type: NodePort
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+    - name: grpc
+      port: 8082
+      targetPort: 8082
