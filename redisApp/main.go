@@ -2,98 +2,127 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"log"
+	"math/rand"
+	"net/http"
 	"time"
 )
 
-func main() {
+type User struct {
+	Name   string
+	Email  string
+	Pass   string
+	Active bool
+}
+
+var users map[uuid.UUID]*User
+var redisClient *RedisClient
+
+func init() {
+	users = make(map[uuid.UUID]*User)
+	rand.Seed(time.Now().UnixNano())
+
 	const (
-		host = "localhost"
-		port = "6379"
+		redisHost = "localhost"
+		redisPort = "6379"
 	)
-	client, err := NewRedisClient(host, port)
+	var err error
+	redisClient, err = NewRedisClient(redisHost, redisPort)
 	if err != nil {
-		log.Fatal(err)
-	}
-	defer client.Close()
-	if err := basicWork(client); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func basicWork(client *RedisClient) error {
-	const (
-		mKey         = "basic_key"
-		notExistKey  = "basic_key" + "_not_exist"
-		notExistKey2 = "sure_not_exist"
-	)
-	keys := []string{mKey, notExistKey, notExistKey2}
-	// comment it if you want data from previous launch
-	/**/
-	err := client.Del(context.Background(), keys...).Err()
-	if err != nil {
-		return err
-	}
-	/**/
-	item, err := client.GetRecord(mKey)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("FIRST GetRecord for key %q `%s`\n", mKey, item)
-	ttl := 5 * time.Second
-	// добавляет запись, https://redis.io/commands/set
-	err = client.Set(context.Background(), mKey, 1, ttl).Err()
-	if err != nil {
-		return err
-	}
-	// just try to uncomment
-	// time.Sleep(ttl)
-	item, err = client.GetRecord(mKey)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("SECOND GetRecord for key %q `%s`\n", mKey, item)
-	// https://redis.io/commands/incrby
-	var count int64 = 2
-	err = client.IncrBy(context.Background(), mKey, count).Err()
-	if err != nil {
-		return err
-	}
-	fmt.Printf("INCR for key %q on value %v\n", mKey, count)
+func main() {
+	defer redisClient.Close()
 
-	item, err = client.GetRecord(mKey)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("THIRD GetRecord for key %q `%s`\n", mKey, item)
-	// https://redis.io/commands/decrby
-	err = client.Decr(context.Background(), mKey).Err()
-	if err != nil {
-		return err
-	}
-	fmt.Printf("DECR for key %q\n", mKey)
-	item, err = client.GetRecord(mKey)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("FOURS GetRecord for key %q `%s`\n", mKey, item)
+	router := mux.NewRouter()
+	router.HandleFunc("/singup", SignUpEndpoint).Methods("POST")
+	router.HandleFunc("/check", CheckEndpoint).Methods("GET")
 
-	err = client.Incr(context.Background(), notExistKey).Err()
-	if err != nil {
-		return err
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: router,
 	}
-	fmt.Printf("INCR for key %q\n", notExistKey)
-	item, err = client.GetRecord(notExistKey)
-	if err != nil {
-		return err
+
+	log.Print("Server Started")
+	if err := srv.ListenAndServe(); err != nil {
+		log.Fatalf("Server Failed: %+v", err)
 	}
-	fmt.Printf("THIRD GetRecord for key %q `%s`\n", notExistKey, item)
-	// https://redis.io/commands/mget
-	result, err := client.MGet(context.Background(), keys...).Result()
+
+}
+
+type SignUpMsg struct {
+	Name  string `json:"name"`
+	Email string `json:"e-mail"`
+	Pass  string `json:"pass"`
+}
+
+func SignUpEndpoint(w http.ResponseWriter, r *http.Request) {
+	var signUpMsg SignUpMsg
+	err := json.NewDecoder(r.Body).Decode(&signUpMsg)
 	if err != nil {
-		return err
+		w.WriteHeader(500)
+		fmt.Fprintf(w, "internal error: %+v\n", err)
+		return
 	}
-	log.Printf("MGET for keys %v, result: %v", keys, result)
-	return nil
+	log.Println(signUpMsg)
+	id := uuid.New()
+	users[id] = &User{
+		Name:   signUpMsg.Name,
+		Email:  signUpMsg.Email,
+		Pass:   signUpMsg.Pass,
+		Active: false,
+	}
+	checkMsg := RandStringBytes(16)
+	log.Println(users)
+	err = redisClient.Set(context.Background(), checkMsg, id.String(), time.Hour).Err()
+	if err != nil {
+		w.WriteHeader(500)
+		fmt.Fprintf(w, "internal error: %+v\n", err)
+		return
+	}
+
+	w.WriteHeader(200)
+	fmt.Fprintf(w, "Please, check e-mail %s and confirm your account within one hour!\nLink http://localhost:8080/check?msg=%s\n", signUpMsg.Email, checkMsg)
+}
+
+func CheckEndpoint(w http.ResponseWriter, r *http.Request) {
+	msg := r.URL.Query().Get("msg")
+	if msg == "" {
+		w.WriteHeader(500)
+		fmt.Fprintf(w, "internal error: Couldn't parse msg param\n")
+		return
+	}
+
+	userIdStr, err := redisClient.GetRecord(msg)
+	if err != nil {
+		w.WriteHeader(500)
+		fmt.Fprintf(w, "internal error: %+v\n", err)
+		return
+	}
+	userId, _ := uuid.Parse(string(userIdStr))
+	user, ok := users[userId]
+	if !ok {
+		w.WriteHeader(500)
+		w.Write([]byte("Check failed!\n"))
+		return
+	}
+	user.Active = true
+	w.WriteHeader(200)
+	w.Write([]byte("Check OK!\n"))
+}
+
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+func RandStringBytes(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
 }
