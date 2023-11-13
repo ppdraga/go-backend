@@ -1,7 +1,11 @@
 package main
 
 import (
-	"fmt"
+	"log"
+	"os"
+	"os/signal"
+	"time"
+
 	"github.com/Shopify/sarama"
 )
 
@@ -27,18 +31,77 @@ func prepareMessage(topic, message string) *sarama.ProducerMessage {
 	return msg
 }
 
+var (
+	kafkaBrokers = []string{"localhost:9092"}
+	KafkaTopic   = "sarama_topic"
+	enqueued     int
+)
+
 func main() {
 
-	fmt.Println("kafka")
-	producer, err := newProducer()
+	//producer, err := setupProducer()
+	producer, err := setupSyncProducer()
 	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	err = producer.SendMessages([]*sarama.ProducerMessage{})
-	if err != nil {
-		fmt.Println(err)
-		return
+		panic(err)
+	} else {
+		log.Println("Kafka AsyncProducer up and running!")
 	}
 
+	// Trap SIGINT to trigger a graceful shutdown.
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, os.Interrupt)
+
+	produceMessagesSync(producer, signals)
+
+	log.Printf("Kafka AsyncProducer finished with %d messages produced.", enqueued)
+}
+
+// setupProducer will create a AsyncProducer and returns it
+func setupProducer() (sarama.AsyncProducer, error) {
+	config := sarama.NewConfig()
+	return sarama.NewAsyncProducer(kafkaBrokers, config)
+}
+
+// setupSyncProducer will create a AsyncProducer and returns it
+func setupSyncProducer() (sarama.SyncProducer, error) {
+	//config := sarama.NewConfig()
+	return sarama.NewSyncProducer(kafkaBrokers, nil)
+}
+
+// produceMessages will send 'testing 123' to KafkaTopic each second, until receive a os signal to stop e.g. control + c
+// by the user in terminal
+func produceMessages(producer sarama.AsyncProducer, signals chan os.Signal) {
+	for {
+		time.Sleep(time.Second)
+		message := &sarama.ProducerMessage{Topic: KafkaTopic, Value: sarama.StringEncoder("testing 123")}
+		select {
+		case producer.Input() <- message:
+			enqueued++
+			log.Println("New Message produced")
+		case <-signals:
+			producer.AsyncClose() // Trigger a shutdown of the producer.
+			return
+		}
+	}
+}
+
+// produceMessages will send 'testing 123' to KafkaTopic each second, until receive a os signal to stop e.g. control + c
+// by the user in terminal
+func produceMessagesSync(producer sarama.SyncProducer, signals chan os.Signal) {
+	for {
+		time.Sleep(time.Second)
+		message := &sarama.ProducerMessage{Topic: KafkaTopic, Value: sarama.StringEncoder("testing 123")}
+		select {
+		default:
+			_, _, err := producer.SendMessage(message)
+			if err != nil {
+				log.Println("Error:", err.Error())
+			}
+			enqueued++
+			log.Println("New Message produced")
+		case <-signals:
+			_ = producer.Close() // Trigger a shutdown of the producer.
+			return
+		}
+	}
 }
