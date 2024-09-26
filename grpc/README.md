@@ -15,3 +15,10 @@
 
 
 link: https://github.com/tensor-programming/grpc_tutorial
+
+
+
+Тестирование grpc без клиента:
+grpc_cli ls localhost:4040
+grpc_cli type localhost:4040 addservice.Request
+grpc_cli call localhost:4040 Add "a: 5,b: 4"
