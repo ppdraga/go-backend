@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 )
 
 type MyObj struct {
@@ -17,6 +18,7 @@ func main() {
 		expectation := make(chan *uint64, 1)
 		expectations <- expectation
 		go func(obj MyObj) {
+			time.Sleep(150 * time.Millisecond)
 			fmt.Println(obj)
 			if obj.ID%2 != 0 {
 				expectation <- &obj.ID
